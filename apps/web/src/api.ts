@@ -22,10 +22,16 @@ async function request<T>(method: string, path: string, body?: unknown, token?: 
   });
   const txt = await res.text();
   let data: any;
-  try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; }
+  let parsed = true;
+  try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; parsed = false; }
   if (!res.ok) {
     const msg = data?.message || (typeof data === 'string' ? data : `HTTP ${res.status}`);
     throw new Error(Array.isArray(msg) ? msg.join(', ') : msg);
+  }
+  if (!parsed) {
+    // 정적 호스팅에서 /api/* 가 index.html 로 폴백되면 200 + HTML 이 내려온다.
+    // HTML 문자열을 데이터로 돌려주면 호출부에서 알 수 없는 타입 오류가 나므로 여기서 차단.
+    throw new Error(`API 응답이 JSON이 아닙니다 (${BASE + path}). VITE_API_BASE 설정을 확인하세요.`);
   }
   return data as T;
 }
