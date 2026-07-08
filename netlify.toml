@@ -1,0 +1,20 @@
+# Netlify 배포 설정 (프론트엔드 전용)
+# ⚠️ Netlify는 정적 호스팅이므로 백엔드(NestJS API)를 실행할 수 없습니다.
+# 백엔드는 별도로 배포해야 합니다 (render.yaml 참조 — Render 권장).
+# 백엔드 배포 후, Netlify 환경변수에 VITE_API_BASE 를 백엔드 URL로 설정하세요.
+#   예) VITE_API_BASE = https://malldemo.onrender.com/api
+
+[build]
+  command = "npm run build:web"
+  publish = "apps/web/dist"
+
+[build.environment]
+  # 웹 빌드는 better-sqlite3 네이티브 빌드가 불필요 → postinstall 차단으로 빌드 안정화
+  NPM_FLAGS = "--ignore-scripts"
+  NODE_VERSION = "20"
+
+# SPA 라우팅: React Router 경로를 index.html로 포워딩 (새로고침 404 방지)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

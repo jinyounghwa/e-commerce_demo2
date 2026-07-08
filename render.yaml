@@ -1,0 +1,21 @@
+# Render Blueprint — 단일 풀스택 배포 (권장)
+# NestJS API가 프론트엔드 빌드 산물까지 함께 서빙하므로 하나의 URL로 전체 데모 동작.
+# 사용: Render 대시보드 → New → Blueprint → 이 레포 연결 (또는 아래 값으로 수동 생성)
+#
+# 무료 플랜(free)은 15분 비활성 후 슬립됨 → 재접속 시 콜드스타트(~30s) + 자동 재시드.
+# DB는 휘발성 파일시스템에 저장되므로 슬립/재배포 시 초기화됨 (데모용으로 충분).
+
+services:
+  - type: web
+    name: malldemo
+    env: node
+    plan: free
+    region: singapore
+    buildCommand: npm run build:api && npm run build:web
+    startCommand: node apps/api/dist/main.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.14.0
+      - key: PORT
+        value: 10000

@@ -215,6 +215,45 @@ npm test    # vitest run
 - **멱등 시드**: DB 삭제 후 재생성으로 언제든 즉시 데모 가능
 - **Mock 시뮬레이션**: 결제·배송·CS 흐름을 외부 연동 없이 상태머신으로 구현
 
+## 배포 (Deploy)
+
+이 프로젝트는 백엔드(NestJS + better-sqlite3)가 필요한 풀스택 앱입니다.
+**Netlify는 정적 호스팅이라 API를 실행할 수 없어 404가 발생**합니다. 아래 두 가지 방법 중 선택하세요.
+
+### 방법 A: Render 단일 배포 (권장) — 하나의 URL로 전체 동작
+
+NestJS가 프론트엔드 빌드까지 함께 서빙하므로 서비스 1개로 끝납니다.
+
+1. https://render.com 가입 후 **New → Web Service** (또는 Blueprint로 `render.yaml` 연결)
+2. 레포지토리 연결: `https://github.com/jinyounghwa/e-commerce_demo2.git`
+3. 설정:
+   - **Build Command**: `npm run build:api && npm run build:web`
+   - **Start Command**: `node apps/api/dist/main.js`
+   - **Environment**: `Node`, **Plan**: `Free`
+4. 배포 완료 후 발급된 URL(예: `https://malldemo.onrender.com`) 접속
+
+> 무료 플랜은 15분 비활성 후 슬립됩니다. 재접속 시 콜드스타트(~30초) 후 자동 재시드되어 즉시 데모 가능합니다.
+
+### 방법 B: Netlify(프론트) + Render(백엔드) 분리 배포
+
+이미 Netlify를 설정한 경우, 백엔드만 별도 배포하고 프론트엔드에서 가리키게 합니다.
+
+1. **백엔드**: 위 방법 A와 동일하게 Render에 배포 (Start Command 동일)
+2. **프론트엔드**: Netlify에 배포 — `netlify.toml`이 자동 적용됨
+   - Build command: `npm run build:web`
+   - Publish directory: `apps/web/dist`
+3. **환경변수 연결**: Netlify 대시보드 → Site settings → Environment variables에 추가:
+   - `VITE_API_BASE` = `https://malldemo.onrender.com/api` (Render 백엔드 URL + `/api`)
+4. Netlify 재배포 → 프론트엔드가 Render 백엔드를 호출
+
+### 로컬 프로덕션 빌드 확인
+
+```bash
+npm run build:api && npm run build:web   # 양쪽 빌드
+PORT=3000 node apps/api/dist/main.js     # 단일 서버 실행 (API + 프론트)
+# → http://localhost:3000 접속 (전체 동작)
+```
+
 ---
 
 자세한 스펙은 `CLAUDE.md`(프로젝트 가이드라인)와 `SKILL.md`(도메인 스펙) 참조.

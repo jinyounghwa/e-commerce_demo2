@@ -1,7 +1,8 @@
 // API 클라이언트 + 타입 정의
 import { useAuth } from './stores/auth';
 
-const BASE = '/api';
+// 배포 환경에 맞춰 API 주소 변경 (Netlify 등 정적 호스팅 시 VITE_API_BASE 설정)
+const BASE = (import.meta.env.VITE_API_BASE as string | undefined) || '/api';
 
 async function request<T>(method: string, path: string, body?: unknown, token?: string | null): Promise<T> {
   const res = await fetch(BASE + path, {

@@ -396,7 +396,21 @@ function seed(db: ReturnType<typeof getDb>) {
   console.log(`  - 재고 보정: 품절 상품 ${restocked}건 충전 (모든 상품 주문 가능 보장)`);
 }
 
-main().catch((e) => {
-  console.error('시드 실패:', e);
-  process.exit(1);
-});
+// 클라우드 배포용: DB가 비어 있으면 자동 시드 (휘발성 파일시스템 대응)
+export async function seedIfEmpty() {
+  const db = getDb();
+  const hasData = db.select().from(schema.users).all().length > 0;
+  if (hasData) return false;
+  const raw = getRaw();
+  raw.transaction(() => seed(db))();
+  console.log('✓ 자동 시드 완료 (빈 DB 감지)');
+  return true;
+}
+
+// 직접 실행 시에만 resetDb + migrate + seed (import 시에는 동작 안 함)
+if (require.main === module) {
+  main().catch((e) => {
+    console.error('시드 실패:', e);
+    process.exit(1);
+  });
+}

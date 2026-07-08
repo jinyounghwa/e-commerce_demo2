@@ -4,7 +4,10 @@ import path from 'path';
 import { getRaw } from './client';
 
 export function migrate() {
-  const sqlPath = path.resolve(__dirname, 'schema.sql');
+  // dist 빌드 환경(src 미포함)과 dev(ts-node) 모두 대응
+  const here = path.resolve(__dirname, 'schema.sql');
+  const src = path.resolve(__dirname, '..', '..', 'src', 'db', 'schema.sql');
+  const sqlPath = fs.existsSync(here) ? here : src;
   const sql = fs.readFileSync(sqlPath, 'utf-8');
   const raw = getRaw();
   raw.exec(sql);
