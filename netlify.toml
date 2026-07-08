@@ -1,7 +1,8 @@
-# Netlify 배포 설정 (프론트엔드 전용)
-# ⚠️ Netlify는 정적 호스팅이므로 백엔드(NestJS API)를 실행할 수 없습니다.
-# 백엔드는 별도로 배포해야 합니다 (render.yaml 참조 — Render 권장).
-# 백엔드 배포 후, Netlify 환경변수에 VITE_API_BASE 를 백엔드 URL로 설정하세요.
+# Netlify 배포 설정
+# 기본값(환경변수 없음): 정적 데모 모드 — 백엔드 없이 브라우저 내장 목 API로 전체 동작.
+#   데이터는 localStorage에 저장되며, 모든 플로우(회원/상품/주문/배송/CS/관리자)가 동작합니다.
+# 실제 백엔드 연동: Netlify 환경변수 VITE_API_BASE 를 백엔드 URL로 설정하면
+#   데모 모드가 비활성화되고 해당 API를 호출합니다 (render.yaml 참조).
 #   예) VITE_API_BASE = https://malldemo.onrender.com/api
 
 [build]

@@ -217,10 +217,23 @@ npm test    # vitest run
 
 ## 배포 (Deploy)
 
-이 프로젝트는 백엔드(NestJS + better-sqlite3)가 필요한 풀스택 앱입니다.
-**Netlify는 정적 호스팅이라 API를 실행할 수 없어 404가 발생**합니다. 아래 두 가지 방법 중 선택하세요.
+세 가지 방법을 지원합니다.
 
-### 방법 A: Render 단일 배포 (권장) — 하나의 URL로 전체 동작
+### 방법 A: Netlify 정적 단독 배포 (가장 간단) — 백엔드 불필요
+
+프로덕션 빌드에서 `VITE_API_BASE`가 설정되지 않으면 프론트엔드가 자동으로
+**정적 데모 모드**로 동작합니다. 브라우저 내장 목 API(`apps/web/src/mock/`)가
+실제 백엔드와 동일한 시드 데이터·금액 계산·상태머신을 재현하며, 모든 변경사항은
+localStorage에 저장됩니다.
+
+1. Netlify에 레포 연결 — `netlify.toml`이 자동 적용됨 (환경변수 설정 불필요)
+2. 배포 완료 후 접속 → 상단에 "🧪 정적 데모 모드" 배너가 표시되면 정상
+3. 데모 계정: `user1@demo.com`(VIP) / `user6@demo.com`(BRONZE) / `admin@demo.com`, 비밀번호 `demo1234`
+4. 데이터 초기화: 개발자도구 콘솔에서 `__resetMallDemo()`
+
+로컬에서 데모 모드 확인: `VITE_DEMO_MODE=1 npm run dev:web`
+
+### 방법 B: Render 단일 배포 — 하나의 URL로 실제 백엔드 동작
 
 NestJS가 프론트엔드 빌드까지 함께 서빙하므로 서비스 1개로 끝납니다.
 
@@ -234,17 +247,19 @@ NestJS가 프론트엔드 빌드까지 함께 서빙하므로 서비스 1개로 
 
 > 무료 플랜은 15분 비활성 후 슬립됩니다. 재접속 시 콜드스타트(~30초) 후 자동 재시드되어 즉시 데모 가능합니다.
 
-### 방법 B: Netlify(프론트) + Render(백엔드) 분리 배포
+### 방법 C: Netlify(프론트) + Render(백엔드) 분리 배포
 
-이미 Netlify를 설정한 경우, 백엔드만 별도 배포하고 프론트엔드에서 가리키게 합니다.
+실제 백엔드를 쓰면서 프론트는 Netlify에 두는 방식입니다.
 
-1. **백엔드**: 위 방법 A와 동일하게 Render에 배포 (Start Command 동일)
+1. **백엔드**: 위 방법 B와 동일하게 Render에 배포 (Start Command 동일)
 2. **프론트엔드**: Netlify에 배포 — `netlify.toml`이 자동 적용됨
    - Build command: `npm run build:web`
    - Publish directory: `apps/web/dist`
 3. **환경변수 연결**: Netlify 대시보드 → Site settings → Environment variables에 추가:
    - `VITE_API_BASE` = `https://malldemo.onrender.com/api` (Render 백엔드 URL + `/api`)
 4. Netlify 재배포 → 프론트엔드가 Render 백엔드를 호출
+
+> `VITE_API_BASE`가 설정되면 데모 모드는 비활성화되고 실제 API를 호출합니다.
 
 ### 로컬 프로덕션 빌드 확인
 

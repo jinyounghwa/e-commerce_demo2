@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, authApi } from '../api';
+import { api, DEMO_MODE } from '../api';
 import { useAuth } from '../stores/auth';
 import { num } from '../lib/format';
 
@@ -15,6 +15,11 @@ export default function StoreLayout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {DEMO_MODE && (
+        <div className="bg-amber-100 text-amber-800 text-xs text-center py-1.5 px-4">
+          🧪 정적 데모 모드 — 모든 데이터는 이 브라우저에만 저장됩니다. (초기화: 개발자도구 콘솔에서 <code className="font-mono">__resetMallDemo()</code>)
+        </div>
+      )}
       <header className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-4">
           <Link to="/" className="font-bold text-xl text-brand-600">MallDemo</Link>

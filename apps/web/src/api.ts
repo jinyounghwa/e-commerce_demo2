@@ -11,7 +11,18 @@ function normalizeBase(raw?: string): string {
 }
 const BASE = normalizeBase(import.meta.env.VITE_API_BASE as string | undefined);
 
+// 정적(데모) 모드: 백엔드 없이 브라우저 내장 목 API로 동작
+// - 프로덕션 빌드에서 VITE_API_BASE 미지정 시 자동 활성화 (Netlify 단독 배포 지원)
+// - VITE_DEMO_MODE=1 로 강제 활성화 가능 (로컬 확인용)
+export const DEMO_MODE =
+  import.meta.env.VITE_DEMO_MODE === '1' ||
+  (import.meta.env.PROD && !import.meta.env.VITE_API_BASE);
+
 async function request<T>(method: string, path: string, body?: unknown, token?: string | null): Promise<T> {
+  if (DEMO_MODE) {
+    const { mockRequest } = await import('./mock/handlers');
+    return mockRequest<T>(method, path, body, token);
+  }
   const res = await fetch(BASE + path, {
     method,
     headers: {
