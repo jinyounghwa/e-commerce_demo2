@@ -2,7 +2,14 @@
 import { useAuth } from './stores/auth';
 
 // 배포 환경에 맞춰 API 주소 변경 (Netlify 등 정적 호스팅 시 VITE_API_BASE 설정)
-const BASE = (import.meta.env.VITE_API_BASE as string | undefined) || '/api';
+// 도메인만 지정해도 동작하도록 /api 접두사를 보정 (scripts/generate-redirects.js 와 동일 규칙)
+function normalizeBase(raw?: string): string {
+  if (!raw) return '/api';
+  let url = raw.replace(/\/+$/, '');
+  if (!url.endsWith('/api') && !url.includes('/api/')) url += '/api';
+  return url;
+}
+const BASE = normalizeBase(import.meta.env.VITE_API_BASE as string | undefined);
 
 async function request<T>(method: string, path: string, body?: unknown, token?: string | null): Promise<T> {
   const res = await fetch(BASE + path, {
