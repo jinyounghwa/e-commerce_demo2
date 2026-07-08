@@ -1,0 +1,231 @@
+-- MallDemo 스키마 — SKILL.md §2
+-- 외래키 ON, 컬럼명은 snake_case (Drizzle 매핑)
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'USER',
+  grade TEXT NOT NULL DEFAULT 'BRONZE',
+  total_spent INTEGER NOT NULL DEFAULT 0,
+  point_balance INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS addresses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  receiver TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  zipcode TEXT NOT NULL,
+  addr1 TEXT NOT NULL,
+  addr2 TEXT,
+  is_default INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  parent_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+  depth INTEGER NOT NULL DEFAULT 1,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER NOT NULL REFERENCES categories(id),
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  base_price INTEGER NOT NULL,
+  sale_price INTEGER NOT NULL,
+  thumbnail_url TEXT NOT NULL,
+  detail_images TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'ON_SALE',
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS product_options (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS product_option_values (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  option_id INTEGER NOT NULL REFERENCES product_options(id) ON DELETE CASCADE,
+  value TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS skus (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  option_value_ids TEXT NOT NULL DEFAULT '[]',
+  option_label TEXT NOT NULL DEFAULT '기본',
+  extra_price INTEGER NOT NULL DEFAULT 0,
+  stock INTEGER NOT NULL DEFAULT 0,
+  is_active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS cart_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sku_id INTEGER NOT NULL REFERENCES skus(id) ON DELETE CASCADE,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  UNIQUE(user_id, sku_id)
+);
+
+CREATE TABLE IF NOT EXISTS wishlists (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  UNIQUE(user_id, product_id)
+);
+
+CREATE TABLE IF NOT EXISTS coupons (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  discount_type TEXT NOT NULL,
+  discount_value INTEGER NOT NULL,
+  max_discount INTEGER,
+  min_order_amount INTEGER NOT NULL DEFAULT 0,
+  issue_type TEXT NOT NULL,
+  valid_days INTEGER NOT NULL DEFAULT 30,
+  total_quantity INTEGER,
+  issued_count INTEGER NOT NULL DEFAULT 0,
+  scope TEXT NOT NULL DEFAULT 'ALL',
+  scope_category_id INTEGER,
+  scope_product_id INTEGER,
+  is_active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS user_coupons (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  coupon_id INTEGER NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'UNUSED',
+  issued_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
+  used_order_id INTEGER,
+  UNIQUE(user_id, coupon_id)
+);
+
+CREATE TABLE IF NOT EXISTS point_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  ref_order_id INTEGER,
+  memo TEXT NOT NULL DEFAULT '',
+  expires_at TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_no TEXT NOT NULL UNIQUE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'PENDING_PAYMENT',
+  items_total INTEGER NOT NULL DEFAULT 0,
+  coupon_discount INTEGER NOT NULL DEFAULT 0,
+  grade_discount INTEGER NOT NULL DEFAULT 0,
+  points_used INTEGER NOT NULL DEFAULT 0,
+  shipping_fee INTEGER NOT NULL DEFAULT 0,
+  pay_amount INTEGER NOT NULL DEFAULT 0,
+  used_user_coupon_id INTEGER,
+  receiver TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  zipcode TEXT NOT NULL,
+  addr1 TEXT NOT NULL,
+  addr2 TEXT,
+  created_at TEXT NOT NULL,
+  paid_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  sku_id INTEGER NOT NULL REFERENCES skus(id),
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  product_name TEXT NOT NULL,
+  option_label TEXT NOT NULL,
+  unit_price INTEGER NOT NULL,
+  quantity INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'NORMAL'
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  method TEXT NOT NULL,
+  status TEXT NOT NULL,
+  fail_reason TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS shipments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  carrier TEXT NOT NULL DEFAULT '가상택배',
+  tracking_no TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'READY',
+  events TEXT NOT NULL DEFAULT '[]'
+);
+
+CREATE TABLE IF NOT EXISTS claims (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  order_item_id INTEGER NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'REQUESTED',
+  reason TEXT NOT NULL,
+  detail TEXT,
+  inspection_result TEXT,
+  refund_amount INTEGER,
+  refund_points INTEGER,
+  exchange_sku_id INTEGER,
+  created_at TEXT NOT NULL,
+  resolved_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  order_item_id INTEGER NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  is_visible INTEGER NOT NULL DEFAULT 1,
+  admin_reply TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(order_item_id)
+);
+
+CREATE TABLE IF NOT EXISTS qnas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  question TEXT NOT NULL,
+  answer TEXT,
+  is_secret INTEGER NOT NULL DEFAULT 0,
+  answered_at TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  link TEXT,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);

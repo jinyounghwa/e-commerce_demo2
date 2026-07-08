@@ -1,0 +1,28 @@
+{
+  "name": "malldemo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "install:secure": "bash scripts/install.sh",
+    "seed": "ts-node apps/api/src/db/seed.ts",
+    "dev:api": "nodemon --watch apps/api/src --exec \"ts-node\" apps/api/src/main.ts",
+    "dev:web": "npm -w web run dev",
+    "build:api": "tsc -p apps/api/tsconfig.json",
+    "build:web": "npm -w web run build",
+    "start:api": "node apps/api/dist/main.js",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.14.0",
+    "drizzle-kit": "^0.22.8",
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}
